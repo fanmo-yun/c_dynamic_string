@@ -11,7 +11,7 @@ typedef struct STRING {
     uint32_t capacity;
 } string;
 
-static inline uint32_t round_up_pow2(uint32_t x) {
+static inline uint32_t __round_up_pow2(uint32_t x) {
     if (x <= 1) return 1;
     x--;
     x |= x >> 1;
@@ -22,11 +22,21 @@ static inline uint32_t round_up_pow2(uint32_t x) {
     return x + 1;
 }
 
+int32_t __update_count(string* s, uint32_t len) {
+    uint32_t new_cap = __round_up_pow2(len);
+    char* newbuf = realloc(s->str, new_cap+1);
+    if (!newbuf) return 2;
+
+    s->str = newbuf;
+    s->capacity = new_cap;
+    return 0;
+}
+
 string* new_string(uint32_t size) {
     string* s = malloc(sizeof *s);
     if (!s) return NULL;
     
-    uint32_t cap = round_up_pow2(size);
+    uint32_t cap = __round_up_pow2(size);
     if (cap < STRING_MIN_CAP) cap = STRING_MIN_CAP;
 
     s->capacity = cap;
@@ -41,30 +51,45 @@ string* new_string(uint32_t size) {
     return s;
 }
 
+void string_clear(string* s) {
+    memset(s->str, 0, s->capacity);
+    s->length = 0;
+}
+
+void free_string(string* s) {
+    if (!s) return;
+    free(s->str);
+    free(s);
+}
+
 int32_t string_write(string* s, const char* str) {
     if (!s || !str) return 1;
 
     uint32_t len = strlen(str);
 
     if (len+1 > s->capacity) {
-        uint32_t new_cap = round_up_pow2(len+1);
-        char* newbuf = realloc(s->str, new_cap+1);
-        if (!newbuf) return 2;
-
-        s->str = newbuf;
-        s->capacity = new_cap;
+        if (__update_count(s, len+1)) return 2;
     }
-    
+
     memcpy(s->str, str, len);
     s->str[len] = '\0';
     s->length = len;
     return 0;
 }
 
-void string_append() {}
+int32_t string_append(string* s, const char* str) {
+    if (!s || !str) return 1;
 
-void free_string(string* s) {
-    if (!s) return;
-    free(s->str);
-    free(s);
+    uint32_t len = strlen(str);
+    uint32_t total = s->length+len;
+    
+    if (total > s->capacity) {
+        if (__update_count(s, total+1)) return 2;
+    }
+
+    memcpy(s->str+s->length, str, len);
+    s->length += len;
+    s->str[s->length] = '\0';
+
+    return 0;
 }

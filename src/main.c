@@ -13,7 +13,17 @@ int main(void) {
     }
     printf("str -> %s, length -> %d, cap -> %d\n", test->str, test->length, test->capacity);
 
+    string_clear(test);
+    printf("str -> %s, length -> %d, cap -> %d\n", test->str, test->length, test->capacity);
+
     result = string_write(test, "hello world! my name is Moryn.");
+    if (result == 2) {
+        free_string(test);
+        return result;
+    }
+    printf("str -> %s, length -> %d, cap -> %d\n", test->str, test->length, test->capacity);
+
+    result = string_append(test, " and my age is 20 years-old");
     if (result == 2) {
         free_string(test);
         return result;
